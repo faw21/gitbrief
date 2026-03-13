@@ -153,12 +153,15 @@ pytest tests/   # 38 tests, 93% coverage
 
 **[gpr](https://github.com/faw21/gpr)** — AI-powered PR descriptions and commit messages from your git diff.
 
+**[changelog-ai](https://github.com/faw21/changelog-ai)** — Generate CHANGELOG entries from git history using AI.
+
 ```bash
 # The full AI-powered git workflow:
-standup-ai                    # 1. morning standup
-gitbrief . --changed-only     # 2. pack context for code review
-gpr                           # 3. generate PR description
-gpr --commit-run              # 4. commit with AI message
+standup-ai --yesterday                                    # 1. morning standup
+gitbrief . --changed-only                                # 2. pack context for review
+gpr                                                       # 3. generate PR description
+gpr --commit-run                                          # 4. commit with AI message
+changelog-ai --release-version v1.x.0 --prepend CHANGELOG.md  # 5. update changelog
 ```
 
 ---
