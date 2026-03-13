@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "codebrief"
+name = "gitbrief"
 version = "0.1.0"
 description = "Git-history-aware codebase context generator for LLMs"
 readme = "README.md"
@@ -40,16 +40,16 @@ dev = [
 ]
 
 [project.scripts]
-codebrief = "codebrief.cli:main"
+gitbrief = "gitbrief.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/faw21/codebrief"
-Repository = "https://github.com/faw21/codebrief"
-Issues = "https://github.com/faw21/codebrief/issues"
+Homepage = "https://github.com/faw21/gitbrief"
+Repository = "https://github.com/faw21/gitbrief"
+Issues = "https://github.com/faw21/gitbrief/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/codebrief"]
+packages = ["src/gitbrief"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=codebrief --cov-report=term-missing"
+addopts = "--cov=gitbrief --cov-report=term-missing"

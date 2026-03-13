@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from codebrief.git_analyzer import GitSummary
-from codebrief.renderer import render_context, _lang
-from codebrief.token_budget import BudgetAllocation
+from gitbrief.git_analyzer import GitSummary
+from gitbrief.renderer import render_context, _lang
+from gitbrief.token_budget import BudgetAllocation
 
 
 def _make_allocation(**kwargs):
@@ -33,7 +33,7 @@ def test_render_basic_structure(tmp_path):
     selected = []
     doc = render_context(tmp_path, selected, summary, alloc, repo_name="myrepo")
     assert "# Codebase Context: myrepo" in doc
-    assert "codebrief" in doc
+    assert "gitbrief" in doc
     assert "Token budget" in doc
 
 

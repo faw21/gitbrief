@@ -1,4 +1,4 @@
-"""codebrief CLI entry point."""
+"""gitbrief CLI entry point."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _detect_repo_root(path: Path) -> Path:
     return path.resolve()
 
 
-@click.command(name="codebrief")
+@click.command(name="gitbrief")
 @click.argument("path", default=".", type=click.Path(exists=True, file_okay=False))
 @click.option(
     "--budget", "-b",
@@ -69,7 +69,7 @@ def _detect_repo_root(path: Path) -> Path:
     default=False,
     help="Print allocation stats to stderr.",
 )
-@click.version_option(__version__, prog_name="codebrief")
+@click.version_option(__version__, prog_name="gitbrief")
 def main(
     path: str,
     budget: int,
@@ -86,11 +86,11 @@ def main(
 
     \b
     Examples:
-      codebrief .                          # current dir, 32k tokens
-      codebrief . --budget 8000            # tight budget for small context
-      codebrief /path/to/repo -o ctx.md    # write to file
-      codebrief . --no-tests --stats       # skip tests, show allocation
-      codebrief . | pbcopy                 # copy to clipboard (macOS)
+      gitbrief .                          # current dir, 32k tokens
+      gitbrief . --budget 8000            # tight budget for small context
+      gitbrief /path/to/repo -o ctx.md    # write to file
+      gitbrief . --no-tests --stats       # skip tests, show allocation
+      gitbrief . | pbcopy                 # copy to clipboard (macOS)
     """
     repo_path = Path(path).resolve()
     repo_root = _detect_repo_root(repo_path)
@@ -138,7 +138,7 @@ def main(
 def _print_stats(git_summary, allocation, selected, c: Console) -> None:
     """Print a rich stats table to stderr."""
     c.print()
-    c.print(Panel.fit("[bold cyan]codebrief allocation stats[/bold cyan]"))
+    c.print(Panel.fit("[bold cyan]gitbrief allocation stats[/bold cyan]"))
 
     tbl = Table(show_header=True, header_style="bold")
     tbl.add_column("Metric", style="dim")

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from codebrief.file_collector import collect_files, _is_binary, _token_estimate
+from gitbrief.file_collector import collect_files, _is_binary, _token_estimate
 
 
 def make_file(tmp_path: Path, rel: str, content: str = "hello world") -> Path:

@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from click.testing import CliRunner
 
-from codebrief.cli import main
+from gitbrief.cli import main
 
 
 @pytest.fixture

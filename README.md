@@ -1,15 +1,15 @@
-# codebrief
+# gitbrief
 
 > Generate LLM-ready context from any git repository — in seconds.
 
 ```bash
-codebrief . --budget 8000 | pbcopy   # copy to clipboard, ready to paste into Claude/GPT
+gitbrief . --budget 8000 | pbcopy   # copy to clipboard, ready to paste into Claude/GPT
 ```
 
-[![PyPI version](https://img.shields.io/pypi/v/codebrief.svg)](https://pypi.org/project/codebrief/)
+[![PyPI version](https://img.shields.io/pypi/v/gitbrief.svg)](https://pypi.org/project/gitbrief/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen.svg)](https://github.com/faw21/codebrief)
+[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
 
 ---
 
@@ -22,13 +22,13 @@ You paste some files, forget others, include outdated versions, blow the context
 
 ## The solution
 
-`codebrief` reads your **git history** to understand what's *actually important right now*, then packs the right files into a token-budget-aware document — perfect for pasting into any LLM.
+`gitbrief` reads your **git history** to understand what's *actually important right now*, then packs the right files into a token-budget-aware document — perfect for pasting into any LLM.
 
 ```
-$ codebrief . --budget 8000 --stats
+$ gitbrief . --budget 8000 --stats
 
 ╭────────────────────────────╮
-│ codebrief allocation stats │
+│ gitbrief allocation stats │
 ╰────────────────────────────╯
 Token budget: 8,000 | Used: 7,999 (100%)
 Files included: 6   | Skipped (budget): 194
@@ -49,9 +49,9 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 
 ---
 
-## Why codebrief beats alternatives
+## Why gitbrief beats alternatives
 
-| Feature | codebrief | repomix | llm-ctx | manual |
+| Feature | gitbrief | repomix | llm-ctx | manual |
 |---------|-----------|---------|---------|--------|
 | Git-history-aware ranking | ✅ | ❌ | ❌ | ❌ |
 | Token budget control | ✅ | ❌ | partial | ❌ |
@@ -64,12 +64,12 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 ## Install
 
 ```bash
-pip install codebrief
+pip install gitbrief
 ```
 
 > **Note**: PyPI release coming soon. Until then, install from source:
 > ```bash
-> pip install git+https://github.com/faw21/codebrief.git
+> pip install git+https://github.com/faw21/gitbrief.git
 > ```
 
 Requires Python 3.10+ and optionally a git repository.
@@ -80,31 +80,31 @@ Requires Python 3.10+ and optionally a git repository.
 
 ```bash
 # Basics
-codebrief .                          # current repo, 32k token budget
-codebrief /path/to/repo              # any repo
+gitbrief .                          # current repo, 32k token budget
+gitbrief /path/to/repo              # any repo
 
 # Token budget control
-codebrief . --budget 8000            # fits GPT-4 32k
-codebrief . --budget 128000          # Claude 3.5 / GPT-4o full context
+gitbrief . --budget 8000            # fits GPT-4 32k
+gitbrief . --budget 128000          # Claude 3.5 / GPT-4o full context
 
 # Output
-codebrief . -o context.md            # write to file
-codebrief . | pbcopy                 # macOS: copy to clipboard
-codebrief . | xclip -selection clipboard  # Linux
+gitbrief . -o context.md            # write to file
+gitbrief . | pbcopy                 # macOS: copy to clipboard
+gitbrief . | xclip -selection clipboard  # Linux
 
 # Filter
-codebrief . --no-tests               # skip test files (save tokens)
+gitbrief . --no-tests               # skip test files (save tokens)
 
 # Debug  
-codebrief . --stats                  # print allocation table to stderr
-codebrief . --max-commits 200        # analyze more git history
+gitbrief . --stats                  # print allocation table to stderr
+gitbrief . --max-commits 200        # analyze more git history
 ```
 
 ---
 
 ## How ranking works
 
-`codebrief` assigns each file a **priority score (0–1)**:
+`gitbrief` assigns each file a **priority score (0–1)**:
 
 - **Recency** (60%): exponential decay — files changed today = 1.0, untouched 6 months = ~0.25
 - **Frequency** (40%): normalized commit frequency across history
@@ -118,8 +118,8 @@ Files are sorted by priority and greedily selected within your token budget.
 ## Development
 
 ```bash
-git clone https://github.com/faw21/codebrief
-cd codebrief
+git clone https://github.com/faw21/gitbrief
+cd gitbrief
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest tests/   # 38 tests, 93% coverage

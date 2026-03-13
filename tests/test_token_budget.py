@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from codebrief.token_budget import count_tokens, fit_files_to_budget
+from gitbrief.token_budget import count_tokens, fit_files_to_budget
 
 
 def test_count_tokens_nonempty():

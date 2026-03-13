@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from codebrief.git_analyzer import analyze_repo, _normalize, GitSummary
+from gitbrief.git_analyzer import analyze_repo, _normalize, GitSummary
 
 
 def test_normalize_empty():
