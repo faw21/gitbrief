@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "codebrief"
+version = "0.1.0"
+description = "Git-history-aware codebase context generator for LLMs"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [
+    { name = "faw21" }
+]
+keywords = ["llm", "ai", "context", "git", "developer-tools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "click>=8.0",
+    "rich>=13.0",
+    "tiktoken>=0.5",
+    "gitpython>=3.1",
+    "pathspec>=0.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+]
+
+[project.scripts]
+codebrief = "codebrief.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/faw21/codebrief"
+Repository = "https://github.com/faw21/codebrief"
+Issues = "https://github.com/faw21/codebrief/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/codebrief"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=codebrief --cov-report=term-missing"
