@@ -1,3 +1,3 @@
 """gitbrief - Git-history-aware codebase context generator for LLMs."""
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

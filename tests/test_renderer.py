@@ -162,3 +162,78 @@ def test_render_xml_default_format_is_markdown(tmp_path):
     # Default should be markdown, not XML
     assert "# Codebase Context: test" in doc
     assert "<?xml" not in doc
+
+
+# ── --prompt tests ────────────────────────────────────────────────────────────
+
+def test_render_prompt_appended_markdown(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary()
+    doc = render_context(tmp_path, [], summary, alloc, prompt="Review for security issues")
+    assert "## Instruction" in doc
+    assert "Review for security issues" in doc
+    # Instruction comes after the main content
+    assert doc.index("## Instruction") > doc.index("# Codebase Context")
+
+
+def test_render_prompt_appended_xml(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary()
+    doc = render_context(tmp_path, [], summary, alloc, fmt="xml", prompt="Find all TODO comments")
+    # XML body comes first, then the instruction appended as plain text
+    assert "Find all TODO comments" in doc
+    xml_end = doc.index("</codebase_context>")
+    prompt_pos = doc.index("Find all TODO comments")
+    assert prompt_pos > xml_end
+
+
+def test_render_no_prompt_no_instruction_section(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary()
+    doc = render_context(tmp_path, [], summary, alloc)
+    assert "## Instruction" not in doc
+
+
+# ── --tree tests ──────────────────────────────────────────────────────────────
+
+def test_render_tree_markdown(tmp_path):
+    rf1 = _make_rf("src/main.py")
+    rf2 = _make_rf("src/utils.py")
+    rf3 = _make_rf("README.md")
+    alloc = _make_allocation(files_included=3)
+    summary = GitSummary()
+    selected = [(rf1, "x=1", 5), (rf2, "y=2", 5), (rf3, "# hi", 5)]
+    doc = render_context(tmp_path, selected, summary, alloc, include_tree=True)
+    assert "## Directory Structure" in doc
+    assert "src/" in doc
+    assert "main.py" in doc
+    assert "README.md" in doc
+
+
+def test_render_tree_xml(tmp_path):
+    rf1 = _make_rf("app/models.py")
+    rf1.priority = 0.85
+    rf2 = _make_rf("app/views.py")
+    rf2.priority = 0.80
+    alloc = _make_allocation(files_included=2)
+    summary = GitSummary()
+    selected = [(rf1, "class M: pass", 10), (rf2, "class V: pass", 10)]
+    doc = render_context(tmp_path, selected, summary, alloc, fmt="xml", include_tree=True)
+    assert "<directory_tree>" in doc
+    assert "app/" in doc
+
+
+def test_render_no_tree_by_default(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary()
+    doc = render_context(tmp_path, [], summary, alloc)
+    assert "## Directory Structure" not in doc
+
+
+def test_render_tree_empty_files(tmp_path):
+    """Tree with no files should not crash."""
+    alloc = _make_allocation()
+    summary = GitSummary()
+    doc = render_context(tmp_path, [], summary, alloc, include_tree=True)
+    # No files means no tree section
+    assert "## Directory Structure" not in doc

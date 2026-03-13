@@ -3,14 +3,15 @@
 > Generate LLM-ready context from any git repository — in seconds.
 
 ```bash
-gitbrief . --budget 8000 --clipboard   # copy to clipboard, ready to paste into Claude/GPT
-gitbrief . --format xml                # Claude-optimized XML output
+gitbrief . --budget 8000 --clipboard              # copy to clipboard, ready to paste into Claude/GPT
+gitbrief . --format xml                           # Claude-optimized XML output
+gitbrief . --tree --prompt "Review for security"  # add directory tree + custom instruction
 ```
 
 [![PyPI version](https://img.shields.io/pypi/v/gitbrief.svg)](https://pypi.org/project/gitbrief/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
+[![Tests](https://img.shields.io/badge/tests-61%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
 
 ---
 
@@ -61,6 +62,8 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 | Single command | ✅ | ✅ | ✅ | ❌ |
 | `--clipboard` flag | ✅ | ❌ | ❌ | ❌ |
 | XML output (Claude-optimized) | ✅ | ❌ | ❌ | ❌ |
+| Directory tree in output | ✅ | ✅ | ❌ | ❌ |
+| Append custom instruction | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -96,6 +99,11 @@ gitbrief . --format markdown        # default markdown output
 
 # Filter
 gitbrief . --no-tests               # skip test files (save tokens)
+
+# Add context for LLM
+gitbrief . --tree                   # include ASCII directory tree
+gitbrief . --prompt "Review for security vulnerabilities"  # append instruction to context
+gitbrief . --tree --prompt "What tests are missing?" --clipboard  # combine everything
 
 # Debug
 gitbrief . --stats                  # print allocation table to stderr

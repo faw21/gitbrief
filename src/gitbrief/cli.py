@@ -84,6 +84,19 @@ def _detect_repo_root(path: Path) -> Path:
     default=False,
     help="Copy output to clipboard (macOS/Linux/Windows).",
 )
+@click.option(
+    "--tree",
+    is_flag=True,
+    default=False,
+    help="Include an ASCII directory tree of included files.",
+)
+@click.option(
+    "--prompt", "-p",
+    "user_prompt",
+    default=None,
+    metavar="TEXT",
+    help="Append a custom instruction to the context (e.g. 'Review for security issues').",
+)
 @click.version_option(__version__, prog_name="gitbrief")
 def main(
     path: str,
@@ -95,6 +108,8 @@ def main(
     stats: bool,
     fmt: str,
     clipboard: bool,
+    tree: bool,
+    user_prompt: Optional[str],
 ) -> None:
     """Generate an LLM-ready context document from a git repository.
 
@@ -103,13 +118,15 @@ def main(
 
     \b
     Examples:
-      gitbrief .                          # current dir, 32k tokens
-      gitbrief . --budget 8000            # tight budget for small context
-      gitbrief /path/to/repo -o ctx.md    # write to file
-      gitbrief . --no-tests --stats       # skip tests, show allocation
-      gitbrief . --clipboard              # copy to clipboard (any platform)
-      gitbrief . --format xml             # Claude-optimized XML output
-      gitbrief . | pbcopy                 # copy to clipboard (macOS pipe)
+      gitbrief .                                        # current dir, 32k tokens
+      gitbrief . --budget 8000                          # tight budget for small context
+      gitbrief /path/to/repo -o ctx.md                  # write to file
+      gitbrief . --no-tests --stats                     # skip tests, show allocation
+      gitbrief . --clipboard                            # copy to clipboard (any platform)
+      gitbrief . --format xml                           # Claude-optimized XML output
+      gitbrief . --tree                                 # include directory structure
+      gitbrief . -p "Review this for security issues"   # append instruction
+      gitbrief . | pbcopy                               # copy to clipboard (macOS pipe)
     """
     repo_path = Path(path).resolve()
     repo_root = _detect_repo_root(repo_path)
@@ -138,7 +155,15 @@ def main(
         progress.update(t3, completed=True)
 
         t4 = progress.add_task("Rendering context document…", total=None)
-        document = render_context(repo_root, selected, git_summary, allocation, fmt=fmt)
+        document = render_context(
+            repo_root,
+            selected,
+            git_summary,
+            allocation,
+            fmt=fmt,
+            include_tree=tree,
+            prompt=user_prompt,
+        )
         progress.update(t4, completed=True)
 
     if stats:

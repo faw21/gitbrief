@@ -67,7 +67,7 @@ def test_cli_version():
     runner = CliRunner()
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
-    assert "0.2.0" in result.output
+    assert "0.3.0" in result.output
 
 
 def test_cli_empty_repo(tmp_path):
@@ -127,3 +127,42 @@ def test_copy_to_clipboard_unsupported_platform():
     with patch("sys.platform", "freebsd"):
         result = _copy_to_clipboard("hello")
     assert result is False
+
+
+def test_cli_prompt_flag(git_repo):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo), "--prompt", "Check for security issues"])
+    assert result.exit_code == 0
+    assert "Check for security issues" in result.output
+    assert "## Instruction" in result.output
+
+
+def test_cli_prompt_short_flag(git_repo):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo), "-p", "What tests are missing?"])
+    assert result.exit_code == 0
+    assert "What tests are missing?" in result.output
+
+
+def test_cli_tree_flag(git_repo):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo), "--tree"])
+    assert result.exit_code == 0
+    assert "## Directory Structure" in result.output
+
+
+def test_cli_tree_and_prompt_combined(git_repo):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo), "--tree", "--prompt", "Explain this codebase"])
+    assert result.exit_code == 0
+    assert "## Directory Structure" in result.output
+    assert "Explain this codebase" in result.output
+    assert "## Instruction" in result.output
+
+
+def test_cli_prompt_with_xml_format(git_repo):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo), "--format", "xml", "--prompt", "Summarize"])
+    assert result.exit_code == 0
+    assert "<?xml" in result.output
+    assert "Summarize" in result.output

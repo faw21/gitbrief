@@ -51,6 +51,41 @@ def _lang(path: Path) -> str:
     return _LANGUAGE_MAP.get(path.suffix.lower(), "")
 
 
+def _build_tree(selected_files: list, repo_root: Path) -> str:
+    """Build an ASCII directory tree from the selected files."""
+    # Collect unique path tuples (dirs and files)
+    paths: set[tuple[str, ...]] = set()
+    for rf, _content, _tokens in selected_files:
+        parts = tuple(rf.relative_path.replace("\\", "/").split("/"))
+        for i in range(1, len(parts) + 1):
+            paths.add(parts[:i])
+
+    sorted_paths = sorted(paths)
+    lines = ["."]
+
+    for path_parts in sorted_paths:
+        depth = len(path_parts) - 1
+        name = path_parts[-1]
+
+        # Is directory if any path has this as a prefix
+        is_dir = any(
+            len(p) > len(path_parts) and p[:len(path_parts)] == path_parts
+            for p in sorted_paths
+        )
+
+        # Determine if last among siblings
+        siblings = [p for p in sorted_paths if len(p) == len(path_parts) and p[:-1] == path_parts[:-1]]
+        is_last = siblings[-1] == path_parts if siblings else True
+
+        connector = "└── " if is_last else "├── "
+        prefix = "    " * depth
+
+        display = f"{name}/" if is_dir else name
+        lines.append(f"{prefix}{connector}{display}")
+
+    return "\n".join(lines)
+
+
 def render_context(
     repo_root: Path,
     selected_files: list,   # list of (RankedFile, content, token_count)
@@ -58,11 +93,19 @@ def render_context(
     allocation: BudgetAllocation,
     repo_name: Optional[str] = None,
     fmt: OutputFormat = "markdown",
+    include_tree: bool = False,
+    prompt: Optional[str] = None,
 ) -> str:
     """Render the full context document as markdown or XML."""
     if fmt == "xml":
-        return _render_xml(repo_root, selected_files, git_summary, allocation, repo_name)
-    return _render_markdown(repo_root, selected_files, git_summary, allocation, repo_name)
+        result = _render_xml(repo_root, selected_files, git_summary, allocation, repo_name, include_tree)
+    else:
+        result = _render_markdown(repo_root, selected_files, git_summary, allocation, repo_name, include_tree)
+
+    if prompt:
+        result = result + f"\n\n---\n\n## Instruction\n\n{prompt}\n"
+
+    return result
 
 
 def _render_markdown(
@@ -71,6 +114,7 @@ def _render_markdown(
     git_summary: GitSummary,
     allocation: BudgetAllocation,
     repo_name: Optional[str] = None,
+    include_tree: bool = False,
 ) -> str:
     """Render the full context document as a markdown string."""
     now = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -85,6 +129,17 @@ def _render_markdown(
         f"> Files included: {allocation.files_included} · Skipped (budget): {allocation.files_skipped}",
         "",
     ]
+
+    # ── Directory Tree ─────────────────────────────────────────────────────────
+    if include_tree and selected_files:
+        lines += [
+            "## Directory Structure",
+            "",
+            "```",
+            _build_tree(selected_files, repo_root),
+            "```",
+            "",
+        ]
 
     # ── Git Summary ────────────────────────────────────────────────────────────
     if git_summary.total_commits_analyzed > 0:
@@ -138,6 +193,7 @@ def _render_xml(
     git_summary: GitSummary,
     allocation: BudgetAllocation,
     repo_name: Optional[str] = None,
+    include_tree: bool = False,
 ) -> str:
     """Render context document as XML — optimized for Claude's context window.
 
@@ -159,6 +215,11 @@ def _render_xml(
     budget_el.set("utilization_pct", f"{allocation.utilization_pct:.0f}")
     budget_el.set("files_included", str(allocation.files_included))
     budget_el.set("files_skipped", str(allocation.files_skipped))
+
+    # ── Directory Tree ─────────────────────────────────────────────────────────
+    if include_tree and selected_files:
+        tree_el = ET.SubElement(root, "directory_tree")
+        tree_el.text = _build_tree(selected_files, repo_root)
 
     # ── Git summary ────────────────────────────────────────────────────────────
     if git_summary.total_commits_analyzed > 0:
