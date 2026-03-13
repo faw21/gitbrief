@@ -9,6 +9,7 @@ codebrief . --budget 8000 | pbcopy   # copy to clipboard, ready to paste into Cl
 [![PyPI version](https://img.shields.io/pypi/v/codebrief.svg)](https://pypi.org/project/codebrief/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-38%20passing-brightgreen.svg)](https://github.com/faw21/codebrief)
 
 ---
 
@@ -65,6 +66,11 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 ```bash
 pip install codebrief
 ```
+
+> **Note**: PyPI release coming soon. Until then, install from source:
+> ```bash
+> pip install git+https://github.com/faw21/codebrief.git
+> ```
 
 Requires Python 3.10+ and optionally a git repository.
 
