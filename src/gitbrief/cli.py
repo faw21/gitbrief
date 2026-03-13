@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
@@ -69,6 +70,20 @@ def _detect_repo_root(path: Path) -> Path:
     default=False,
     help="Print allocation stats to stderr.",
 )
+@click.option(
+    "--format", "-f",
+    "fmt",
+    type=click.Choice(["markdown", "xml"], case_sensitive=False),
+    default="markdown",
+    show_default=True,
+    help="Output format. 'xml' is optimized for Claude's context window.",
+)
+@click.option(
+    "--clipboard", "-c",
+    is_flag=True,
+    default=False,
+    help="Copy output to clipboard (macOS/Linux/Windows).",
+)
 @click.version_option(__version__, prog_name="gitbrief")
 def main(
     path: str,
@@ -78,6 +93,8 @@ def main(
     max_commits: int,
     max_files: int,
     stats: bool,
+    fmt: str,
+    clipboard: bool,
 ) -> None:
     """Generate an LLM-ready context document from a git repository.
 
@@ -90,7 +107,9 @@ def main(
       gitbrief . --budget 8000            # tight budget for small context
       gitbrief /path/to/repo -o ctx.md    # write to file
       gitbrief . --no-tests --stats       # skip tests, show allocation
-      gitbrief . | pbcopy                 # copy to clipboard (macOS)
+      gitbrief . --clipboard              # copy to clipboard (any platform)
+      gitbrief . --format xml             # Claude-optimized XML output
+      gitbrief . | pbcopy                 # copy to clipboard (macOS pipe)
     """
     repo_path = Path(path).resolve()
     repo_root = _detect_repo_root(repo_path)
@@ -119,13 +138,25 @@ def main(
         progress.update(t3, completed=True)
 
         t4 = progress.add_task("Rendering context document…", total=None)
-        document = render_context(repo_root, selected, git_summary, allocation)
+        document = render_context(repo_root, selected, git_summary, allocation, fmt=fmt)
         progress.update(t4, completed=True)
 
     if stats:
         _print_stats(git_summary, allocation, selected, console)
 
-    if output:
+    if clipboard:
+        success = _copy_to_clipboard(document)
+        if success:
+            console.print(
+                f"[green]✓[/green] Copied to clipboard "
+                f"([bold]{allocation.budget_used:,}[/bold] tokens, "
+                f"[bold]{allocation.files_included}[/bold] files)"
+            )
+        else:
+            console.print("[yellow]⚠[/yellow] Clipboard copy failed — "
+                          "install xclip/xsel on Linux, or use pbcopy on macOS.")
+            click.echo(document)
+    elif output:
         out_path = Path(output)
         out_path.write_text(document, encoding="utf-8")
         console.print(f"[green]✓[/green] Written to [bold]{out_path}[/bold] "
@@ -133,6 +164,28 @@ def main(
     else:
         # Raw output to stdout for piping
         click.echo(document)
+
+
+def _copy_to_clipboard(text: str) -> bool:
+    """Copy text to the system clipboard. Returns True on success."""
+    try:
+        if sys.platform == "darwin":
+            subprocess.run(["pbcopy"], input=text.encode(), check=True)
+            return True
+        if sys.platform.startswith("linux"):
+            for cmd in (["xclip", "-selection", "clipboard"], ["xsel", "--clipboard", "--input"]):
+                try:
+                    subprocess.run(cmd, input=text.encode(), check=True)
+                    return True
+                except FileNotFoundError:
+                    continue
+            return False
+        if sys.platform == "win32":
+            subprocess.run(["clip"], input=text.encode("utf-16"), check=True)
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def _print_stats(git_summary, allocation, selected, c: Console) -> None:

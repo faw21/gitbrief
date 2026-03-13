@@ -1,13 +1,16 @@
-"""Render the final context document."""
+"""Render the final context document (markdown or XML formats)."""
 
 from __future__ import annotations
 
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from .git_analyzer import GitSummary
 from .token_budget import BudgetAllocation
+
+OutputFormat = Literal["markdown", "xml"]
 
 
 _LANGUAGE_MAP = {
@@ -51,6 +54,20 @@ def _lang(path: Path) -> str:
 def render_context(
     repo_root: Path,
     selected_files: list,   # list of (RankedFile, content, token_count)
+    git_summary: GitSummary,
+    allocation: BudgetAllocation,
+    repo_name: Optional[str] = None,
+    fmt: OutputFormat = "markdown",
+) -> str:
+    """Render the full context document as markdown or XML."""
+    if fmt == "xml":
+        return _render_xml(repo_root, selected_files, git_summary, allocation, repo_name)
+    return _render_markdown(repo_root, selected_files, git_summary, allocation, repo_name)
+
+
+def _render_markdown(
+    repo_root: Path,
+    selected_files: list,
     git_summary: GitSummary,
     allocation: BudgetAllocation,
     repo_name: Optional[str] = None,
@@ -113,3 +130,78 @@ def render_context(
         ]
 
     return "\n".join(lines)
+
+
+def _render_xml(
+    repo_root: Path,
+    selected_files: list,
+    git_summary: GitSummary,
+    allocation: BudgetAllocation,
+    repo_name: Optional[str] = None,
+) -> str:
+    """Render context document as XML — optimized for Claude's context window.
+
+    Uses Anthropic's recommended <documents> structure so Claude can reference
+    files by index and reason about the codebase more precisely.
+    """
+    now = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    name = repo_name or repo_root.name
+
+    root = ET.Element("codebase_context")
+    root.set("repo", name)
+    root.set("generated_at", now)
+    root.set("tool", "gitbrief")
+
+    # ── Budget metadata ───────────────────────────────────────────────────────
+    budget_el = ET.SubElement(root, "token_budget")
+    budget_el.set("total", str(allocation.total_budget))
+    budget_el.set("used", str(allocation.budget_used))
+    budget_el.set("utilization_pct", f"{allocation.utilization_pct:.0f}")
+    budget_el.set("files_included", str(allocation.files_included))
+    budget_el.set("files_skipped", str(allocation.files_skipped))
+
+    # ── Git summary ────────────────────────────────────────────────────────────
+    if git_summary.total_commits_analyzed > 0:
+        git_el = ET.SubElement(root, "git_activity")
+        git_el.set("branch", git_summary.branch)
+        git_el.set("commits_analyzed", str(git_summary.total_commits_analyzed))
+
+        if git_summary.active_authors:
+            authors_el = ET.SubElement(git_el, "active_authors")
+            for author in git_summary.active_authors:
+                a_el = ET.SubElement(authors_el, "author")
+                a_el.text = author
+
+        if git_summary.most_changed_files:
+            hotspots_el = ET.SubElement(git_el, "hotspot_files")
+            for fpath in git_summary.most_changed_files[:5]:
+                f_el = ET.SubElement(hotspots_el, "file")
+                f_el.text = fpath
+
+        if git_summary.recent_commits:
+            commits_el = ET.SubElement(git_el, "recent_commits")
+            for c in git_summary.recent_commits[:10]:
+                c_el = ET.SubElement(commits_el, "commit")
+                c_el.set("sha", c["sha"])
+                c_el.set("author", c["author"])
+                c_el.text = c["message"]
+
+    # ── Documents (Anthropic-recommended format) ───────────────────────────────
+    docs_el = ET.SubElement(root, "documents")
+    for idx, (rf, content, tokens) in enumerate(selected_files, start=1):
+        doc_el = ET.SubElement(docs_el, "document")
+        doc_el.set("index", str(idx))
+        doc_el.set("tokens", str(tokens))
+        if rf.is_recently_changed:
+            doc_el.set("recently_changed", "true")
+        doc_el.set("priority", f"{rf.priority:.2f}")
+
+        src_el = ET.SubElement(doc_el, "source")
+        src_el.text = rf.relative_path
+
+        content_el = ET.SubElement(doc_el, "document_content")
+        content_el.text = content
+
+    # Pretty-print with indentation
+    ET.indent(root, space="  ")
+    return '<?xml version="1.0" encoding="utf-8"?>\n' + ET.tostring(root, encoding="unicode")

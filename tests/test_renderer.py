@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from gitbrief.git_analyzer import GitSummary
-from gitbrief.renderer import render_context, _lang
+from gitbrief.renderer import render_context, _lang, _render_xml
 from gitbrief.token_budget import BudgetAllocation
 
 
@@ -100,3 +100,65 @@ def test_render_allocation_stats(tmp_path):
     assert "7,500" in doc  # budget_used
     assert "8,000" in doc  # total_budget
     assert "5" in doc      # files_included
+
+
+# ── XML format tests ──────────────────────────────────────────────────────────
+
+def test_render_xml_basic_structure(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary(branch="main", total_commits_analyzed=5)
+    doc = render_context(tmp_path, [], summary, alloc, repo_name="myrepo", fmt="xml")
+    assert '<?xml version="1.0"' in doc
+    assert 'repo="myrepo"' in doc
+    assert "<token_budget" in doc
+    assert "<git_activity" in doc
+
+
+def test_render_xml_file_contents(tmp_path):
+    (tmp_path / "main.py").write_text("x = 1")
+    rf = _make_rf("main.py", is_recently_changed=True)
+    rf.priority = 0.95
+    alloc = _make_allocation(files_included=1)
+    summary = GitSummary()
+    selected = [(rf, "x = 1", 5)]
+    doc = render_context(tmp_path, selected, summary, alloc, fmt="xml")
+    assert "<documents>" in doc
+    assert '<document index="1"' in doc
+    assert "recently_changed" in doc
+    assert "<source>main.py</source>" in doc
+    assert "<document_content>" in doc
+    assert "x = 1" in doc
+
+
+def test_render_xml_no_git_history(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary(total_commits_analyzed=0)
+    doc = render_context(tmp_path, [], summary, alloc, fmt="xml")
+    assert "<git_activity" not in doc
+
+
+def test_render_xml_git_summary(tmp_path):
+    summary = GitSummary(
+        branch="feature-x",
+        total_commits_analyzed=10,
+        active_authors=["Alice"],
+        most_changed_files=["main.py"],
+        recent_commits=[
+            {"sha": "abc123", "message": "fix bug", "author": "Alice", "date": "2026-01-01T00:00:00+00:00"}
+        ],
+    )
+    alloc = _make_allocation()
+    doc = render_context(tmp_path, [], summary, alloc, fmt="xml")
+    assert 'branch="feature-x"' in doc
+    assert "<author>Alice</author>" in doc
+    assert "fix bug" in doc
+    assert "<file>main.py</file>" in doc
+
+
+def test_render_xml_default_format_is_markdown(tmp_path):
+    alloc = _make_allocation()
+    summary = GitSummary()
+    doc = render_context(tmp_path, [], summary, alloc, repo_name="test")
+    # Default should be markdown, not XML
+    assert "# Codebase Context: test" in doc
+    assert "<?xml" not in doc

@@ -3,7 +3,8 @@
 > Generate LLM-ready context from any git repository — in seconds.
 
 ```bash
-gitbrief . --budget 8000 | pbcopy   # copy to clipboard, ready to paste into Claude/GPT
+gitbrief . --budget 8000 --clipboard   # copy to clipboard, ready to paste into Claude/GPT
+gitbrief . --format xml                # Claude-optimized XML output
 ```
 
 [![PyPI version](https://img.shields.io/pypi/v/gitbrief.svg)](https://pypi.org/project/gitbrief/)
@@ -58,6 +59,8 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 | Recency decay scoring | ✅ | ❌ | ❌ | ❌ |
 | Recent commits narrative | ✅ | ❌ | ❌ | ❌ |
 | Single command | ✅ | ✅ | ✅ | ❌ |
+| `--clipboard` flag | ✅ | ❌ | ❌ | ❌ |
+| XML output (Claude-optimized) | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -66,11 +69,6 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 ```bash
 pip install gitbrief
 ```
-
-> **Note**: PyPI release coming soon. Until then, install from source:
-> ```bash
-> pip install git+https://github.com/faw21/gitbrief.git
-> ```
 
 Requires Python 3.10+ and optionally a git repository.
 
@@ -89,13 +87,17 @@ gitbrief . --budget 128000          # Claude 3.5 / GPT-4o full context
 
 # Output
 gitbrief . -o context.md            # write to file
-gitbrief . | pbcopy                 # macOS: copy to clipboard
-gitbrief . | xclip -selection clipboard  # Linux
+gitbrief . --clipboard              # copy to clipboard (macOS/Linux/Windows)
+gitbrief . | pbcopy                 # macOS: pipe to clipboard
+
+# Format
+gitbrief . --format xml             # Claude-optimized XML output (uses <documents> structure)
+gitbrief . --format markdown        # default markdown output
 
 # Filter
 gitbrief . --no-tests               # skip test files (save tokens)
 
-# Debug  
+# Debug
 gitbrief . --stats                  # print allocation table to stderr
 gitbrief . --max-commits 200        # analyze more git history
 ```
