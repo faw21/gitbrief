@@ -149,13 +149,16 @@ pytest tests/   # 38 tests, 93% coverage
 
 ## Related Tools
 
+**[standup-ai](https://github.com/faw21/standup-ai)** — Generate your daily standup from git history using AI.
+
 **[gpr](https://github.com/faw21/gpr)** — AI-powered PR descriptions and commit messages from your git diff.
 
 ```bash
-# Typical workflow: use gitbrief to pack context, then gpr to describe what changed
-gitbrief . --changed-only --clipboard  # pack PR context into clipboard
-gpr                                    # generate PR description from the same diff
-gpr --commit-run                       # or generate + commit in one command
+# The full AI-powered git workflow:
+standup-ai                    # 1. morning standup
+gitbrief . --changed-only     # 2. pack context for code review
+gpr                           # 3. generate PR description
+gpr --commit-run              # 4. commit with AI message
 ```
 
 ---
