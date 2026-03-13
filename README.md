@@ -147,6 +147,19 @@ pytest tests/   # 38 tests, 93% coverage
 
 ---
 
+## Related Tools
+
+**[gpr](https://github.com/faw21/gpr)** — AI-powered PR descriptions and commit messages from your git diff.
+
+```bash
+# Typical workflow: use gitbrief to pack context, then gpr to describe what changed
+gitbrief . --changed-only --clipboard  # pack PR context into clipboard
+gpr                                    # generate PR description from the same diff
+gpr --commit-run                       # or generate + commit in one command
+```
+
+---
+
 ## License
 
 MIT
