@@ -67,7 +67,7 @@ def test_cli_version():
     runner = CliRunner()
     result = runner.invoke(main, ["--version"])
     assert result.exit_code == 0
-    assert "0.3.0" in result.output
+    assert "0.4.0" in result.output
 
 
 def test_cli_empty_repo(tmp_path):
@@ -166,3 +166,71 @@ def test_cli_prompt_with_xml_format(git_repo):
     assert result.exit_code == 0
     assert "<?xml" in result.output
     assert "Summarize" in result.output
+
+
+@pytest.fixture
+def git_repo_with_branch(tmp_path):
+    """Create a git repo with main + feature branch having changed files."""
+    env = {**os.environ, "GIT_AUTHOR_NAME": "Test", "GIT_AUTHOR_EMAIL": "t@t.com",
+           "GIT_COMMITTER_NAME": "Test", "GIT_COMMITTER_EMAIL": "t@t.com"}
+    subprocess.run(["git", "init", "-b", "main"], cwd=tmp_path, capture_output=True)
+
+    # Initial commit on main
+    (tmp_path / "base.py").write_text("x = 1\n")
+    (tmp_path / "README.md").write_text("# Readme\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True, env=env)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=tmp_path, capture_output=True, env=env)
+
+    # Feature branch
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=tmp_path, capture_output=True, env=env)
+    (tmp_path / "new_feature.py").write_text("y = 2\n")
+    subprocess.run(["git", "add", "."], cwd=tmp_path, capture_output=True, env=env)
+    subprocess.run(["git", "commit", "-m", "feat: add y"], cwd=tmp_path, capture_output=True, env=env)
+
+    return tmp_path
+
+
+def test_cli_changed_only_flag(git_repo_with_branch):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo_with_branch), "--changed-only", "--base", "main"])
+    assert result.exit_code == 0
+    assert "new_feature.py" in result.output
+    # base.py was NOT changed in feature branch → should not appear in File Contents
+    # (it may appear in git summary hotspot section, so check the file contents section)
+    assert "### `base.py`" not in result.output
+
+
+def test_cli_changed_only_help():
+    runner = CliRunner()
+    result = runner.invoke(main, ["--help"])
+    assert "changed-only" in result.output
+    assert "include-diff" in result.output
+
+
+def test_cli_include_diff_flag(git_repo_with_branch):
+    runner = CliRunner()
+    result = runner.invoke(main, [str(git_repo_with_branch), "--include-diff", "--base", "main"])
+    assert result.exit_code == 0
+    assert "Git Diff" in result.output
+    assert "diff --git" in result.output
+
+
+def test_cli_changed_only_and_include_diff_combined(git_repo_with_branch):
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [str(git_repo_with_branch), "--changed-only", "--include-diff", "--base", "main"]
+    )
+    assert result.exit_code == 0
+    assert "new_feature.py" in result.output
+    assert "Git Diff" in result.output
+
+
+def test_cli_include_diff_xml_format(git_repo_with_branch):
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [str(git_repo_with_branch), "--include-diff", "--base", "main", "--format", "xml"]
+    )
+    assert result.exit_code == 0
+    assert "git_diff" in result.output

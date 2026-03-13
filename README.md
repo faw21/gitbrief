@@ -6,12 +6,14 @@
 gitbrief . --budget 8000 --clipboard              # copy to clipboard, ready to paste into Claude/GPT
 gitbrief . --format xml                           # Claude-optimized XML output
 gitbrief . --tree --prompt "Review for security"  # add directory tree + custom instruction
+gitbrief . --changed-only --clipboard             # PR review: only files changed vs main
+gitbrief . --changed-only --include-diff          # full PR context: diff + changed file contents
 ```
 
 [![PyPI version](https://img.shields.io/pypi/v/gitbrief.svg)](https://pypi.org/project/gitbrief/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-61%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
+[![Tests](https://img.shields.io/badge/tests-70%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
 
 ---
 
@@ -59,6 +61,8 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 | Token budget control | ✅ | ❌ | partial | ❌ |
 | Recency decay scoring | ✅ | ❌ | ❌ | ❌ |
 | Recent commits narrative | ✅ | ❌ | ❌ | ❌ |
+| PR review mode (changed files only) | ✅ | ❌ | ❌ | ❌ |
+| Include git diff in output | ✅ | ❌ | ❌ | ❌ |
 | Single command | ✅ | ✅ | ✅ | ❌ |
 | `--clipboard` flag | ✅ | ❌ | ❌ | ❌ |
 | XML output (Claude-optimized) | ✅ | ❌ | ❌ | ❌ |
@@ -99,6 +103,12 @@ gitbrief . --format markdown        # default markdown output
 
 # Filter
 gitbrief . --no-tests               # skip test files (save tokens)
+
+# PR review mode (v0.4+)
+gitbrief . --changed-only                        # only files changed vs base branch (auto-detected)
+gitbrief . --changed-only --base develop         # diff against a specific branch
+gitbrief . --include-diff                        # add git diff to output
+gitbrief . --changed-only --include-diff --clipboard  # ultimate PR review context
 
 # Add context for LLM
 gitbrief . --tree                   # include ASCII directory tree

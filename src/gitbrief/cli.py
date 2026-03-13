@@ -15,7 +15,7 @@ from rich.table import Table
 
 from . import __version__
 from .file_collector import collect_files
-from .git_analyzer import analyze_repo
+from .git_analyzer import analyze_repo, get_changed_files, get_diff
 from .renderer import render_context
 from .token_budget import fit_files_to_budget
 
@@ -97,6 +97,23 @@ def _detect_repo_root(path: Path) -> Path:
     metavar="TEXT",
     help="Append a custom instruction to the context (e.g. 'Review for security issues').",
 )
+@click.option(
+    "--changed-only",
+    is_flag=True,
+    default=False,
+    help="Only include files changed vs base branch (auto-detected). Perfect for PR review context.",
+)
+@click.option(
+    "--base",
+    default=None,
+    help="Base branch for --changed-only and --include-diff (auto-detected if not set).",
+)
+@click.option(
+    "--include-diff",
+    is_flag=True,
+    default=False,
+    help="Include git diff in the output (useful for code review).",
+)
 @click.version_option(__version__, prog_name="gitbrief")
 def main(
     path: str,
@@ -110,6 +127,9 @@ def main(
     clipboard: bool,
     tree: bool,
     user_prompt: Optional[str],
+    changed_only: bool,
+    base: Optional[str],
+    include_diff: bool,
 ) -> None:
     """Generate an LLM-ready context document from a git repository.
 
@@ -126,6 +146,8 @@ def main(
       gitbrief . --format xml                           # Claude-optimized XML output
       gitbrief . --tree                                 # include directory structure
       gitbrief . -p "Review this for security issues"   # append instruction
+      gitbrief . --changed-only --clipboard             # PR review: only changed files
+      gitbrief . --changed-only --include-diff          # full PR context: diff + changed files
       gitbrief . | pbcopy                               # copy to clipboard (macOS pipe)
     """
     repo_path = Path(path).resolve()
@@ -150,6 +172,22 @@ def main(
         )
         progress.update(t2, completed=True)
 
+        # Filter to changed-only files if requested
+        if changed_only:
+            progress.add_task("Filtering to changed files…", total=None)
+            changed_paths = get_changed_files(repo_root, base_branch=base)
+            if changed_paths:
+                ranked = [f for f in ranked if f.relative_path in changed_paths]
+                if not ranked:
+                    console.print("[yellow]⚠[/yellow] No changed files found vs base branch. "
+                                  "Use --base to specify a different base, or omit --changed-only.")
+
+        # Get diff if requested
+        diff_content: Optional[str] = None
+        if include_diff:
+            progress.add_task("Getting git diff…", total=None)
+            diff_content = get_diff(repo_root, base_branch=base)
+
         t3 = progress.add_task(f"Fitting {len(ranked)} files into {budget:,} token budget…", total=None)
         selected, allocation = fit_files_to_budget(ranked, budget)
         progress.update(t3, completed=True)
@@ -163,6 +201,7 @@ def main(
             fmt=fmt,
             include_tree=tree,
             prompt=user_prompt,
+            diff=diff_content,
         )
         progress.update(t4, completed=True)
 

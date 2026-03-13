@@ -95,12 +95,13 @@ def render_context(
     fmt: OutputFormat = "markdown",
     include_tree: bool = False,
     prompt: Optional[str] = None,
+    diff: Optional[str] = None,
 ) -> str:
     """Render the full context document as markdown or XML."""
     if fmt == "xml":
-        result = _render_xml(repo_root, selected_files, git_summary, allocation, repo_name, include_tree)
+        result = _render_xml(repo_root, selected_files, git_summary, allocation, repo_name, include_tree, diff)
     else:
-        result = _render_markdown(repo_root, selected_files, git_summary, allocation, repo_name, include_tree)
+        result = _render_markdown(repo_root, selected_files, git_summary, allocation, repo_name, include_tree, diff)
 
     if prompt:
         result = result + f"\n\n---\n\n## Instruction\n\n{prompt}\n"
@@ -115,6 +116,7 @@ def _render_markdown(
     allocation: BudgetAllocation,
     repo_name: Optional[str] = None,
     include_tree: bool = False,
+    diff: Optional[str] = None,
 ) -> str:
     """Render the full context document as a markdown string."""
     now = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -168,6 +170,17 @@ def _render_markdown(
         lines.append(f"- `{rf.relative_path}` ({tokens:,} tokens){flag}")
     lines.append("")
 
+    # ── Git Diff ───────────────────────────────────────────────────────────────
+    if diff:
+        lines += [
+            "## Git Diff",
+            "",
+            "```diff",
+            diff.rstrip(),
+            "```",
+            "",
+        ]
+
     # ── File Contents ─────────────────────────────────────────────────────────
     lines.append("## File Contents")
     lines.append("")
@@ -194,6 +207,7 @@ def _render_xml(
     allocation: BudgetAllocation,
     repo_name: Optional[str] = None,
     include_tree: bool = False,
+    diff: Optional[str] = None,
 ) -> str:
     """Render context document as XML — optimized for Claude's context window.
 
@@ -246,6 +260,11 @@ def _render_xml(
                 c_el.set("sha", c["sha"])
                 c_el.set("author", c["author"])
                 c_el.text = c["message"]
+
+    # ── Git Diff ───────────────────────────────────────────────────────────────
+    if diff:
+        diff_el = ET.SubElement(root, "git_diff")
+        diff_el.text = diff
 
     # ── Documents (Anthropic-recommended format) ───────────────────────────────
     docs_el = ET.SubElement(root, "documents")

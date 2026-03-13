@@ -53,6 +53,84 @@ def _normalize(values: dict[str, float]) -> dict[str, float]:
     return {k: v / max_val for k, v in values.items()}
 
 
+def get_changed_files(repo_path: Path, base_branch: Optional[str] = None) -> set[str]:
+    """Return the set of files changed between the current branch and base branch.
+
+    Uses auto-detected base branch (main/master/develop). Returns empty set
+    if not in a git repo or if diff fails.
+    """
+    if not HAS_GIT:
+        return set()
+
+    import subprocess
+    try:
+        repo = Repo(repo_path, search_parent_directories=True)
+    except (InvalidGitRepositoryError, Exception):
+        return set()
+
+    base = base_branch or _auto_detect_base(repo)
+    try:
+        result = subprocess.run(
+            ["git", "diff", "--name-only", base, "HEAD"],
+            capture_output=True,
+            text=True,
+            cwd=str(repo.working_dir),
+            check=True,
+        )
+        return {line.strip() for line in result.stdout.strip().splitlines() if line.strip()}
+    except subprocess.CalledProcessError:
+        return set()
+
+
+def get_diff(repo_path: Path, base_branch: Optional[str] = None, max_chars: int = 16000) -> str:
+    """Return the git diff between current branch and base branch.
+
+    Returns empty string if not in a git repo or diff is empty.
+    """
+    if not HAS_GIT:
+        return ""
+
+    import subprocess
+    try:
+        repo = Repo(repo_path, search_parent_directories=True)
+    except (InvalidGitRepositoryError, Exception):
+        return ""
+
+    base = base_branch or _auto_detect_base(repo)
+    try:
+        result = subprocess.run(
+            ["git", "diff", base, "HEAD"],
+            capture_output=True,
+            text=True,
+            cwd=str(repo.working_dir),
+            check=True,
+        )
+        diff = result.stdout
+        if len(diff) > max_chars:
+            diff = diff[:max_chars] + f"\n\n... (truncated, {len(diff) - max_chars} chars omitted)"
+        return diff
+    except subprocess.CalledProcessError:
+        return ""
+
+
+def _auto_detect_base(repo) -> str:
+    """Auto-detect base branch (main/master/develop/HEAD~1)."""
+    candidates = ["main", "master", "develop", "dev"]
+    try:
+        remote_refs = {ref.remote_head for ref in repo.remotes[0].refs} if repo.remotes else set()
+    except Exception:
+        remote_refs = set()
+    for candidate in candidates:
+        try:
+            if candidate in [b.name for b in repo.branches]:
+                return candidate
+            if candidate in remote_refs:
+                return f"origin/{candidate}"
+        except Exception:
+            continue
+    return "HEAD~1"
+
+
 def analyze_repo(repo_path: Path, max_commits: int = 100) -> tuple[dict[str, FileScore], GitSummary]:
     """
     Analyze a git repository and return per-file relevance scores.
