@@ -230,6 +230,8 @@ chronicle file src/payments.py --style detective          # 8. understand comple
 
 ---
 
+- [testfix](https://github.com/faw21/testfix) — AI fixes your failing tests automatically
+
 - [difftests](https://github.com/faw21/difftests) — AI test generator from git diffs
 
 - [critiq-action](https://github.com/faw21/critiq-action) — critiq as a GitHub Action for CI
