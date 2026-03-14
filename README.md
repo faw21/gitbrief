@@ -220,17 +220,18 @@ pytest tests/   # 84 tests, 90% coverage
 # The full AI-powered git workflow:
 standup-ai --yesterday                                    # 1. morning standup
 critiq                                                    # 2. AI review before committing
-gpr --commit-run                                          # 3. commit with AI message
-gitbrief . --changed-only --clipboard                    # 4. pack context for PR review
-gpr                                                       # 5. generate PR description
-prcat 42                                                  # 6. AI review of teammate's PR
-changelog-ai --release-version v1.x.0 --prepend CHANGELOG.md  # 7. update changelog
-chronicle file src/payments.py --style detective          # 8. understand complex history
+testfix pytest                                            # 3. Auto-fix failing tests
+gpr --commit-run                                          # 4. commit with AI message
+gitbrief . --changed-only --clipboard                    # 5. pack context for PR review
+gpr                                                       # 6. generate PR description
+prcat 42                                                  # 7. AI review of teammate's PR
+changelog-ai --release-version v1.x.0 --prepend CHANGELOG.md  # 8. update changelog
+chronicle file src/payments.py --style detective          # 9. understand complex history
 ```
 
 ---
 
-- [testfix](https://github.com/faw21/testfix) — AI fixes your failing tests automatically
+- [testfix](https://github.com/faw21/testfix) — AI failing test auto-fixer
 
 - [difftests](https://github.com/faw21/difftests) — AI test generator from git diffs
 
