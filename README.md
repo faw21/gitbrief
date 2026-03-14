@@ -8,12 +8,14 @@ gitbrief . --format xml                           # Claude-optimized XML output
 gitbrief . --tree --prompt "Review for security"  # add directory tree + custom instruction
 gitbrief . --changed-only --clipboard             # PR review: only files changed vs main
 gitbrief . --changed-only --include-diff          # full PR context: diff + changed file contents
+gitbrief-mcp                                      # start as MCP server (Claude Desktop integration)
 ```
 
 [![PyPI version](https://img.shields.io/pypi/v/gitbrief.svg)](https://pypi.org/project/gitbrief/)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-70%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
+[![Tests](https://img.shields.io/badge/tests-84%20passing-brightgreen.svg)](https://github.com/faw21/gitbrief)
+[![MCP](https://img.shields.io/badge/MCP-server-purple.svg)](https://github.com/faw21/gitbrief)
 
 ---
 
@@ -68,6 +70,7 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 | XML output (Claude-optimized) | ✅ | ❌ | ❌ | ❌ |
 | Directory tree in output | ✅ | ✅ | ❌ | ❌ |
 | Append custom instruction | ✅ | ❌ | ❌ | ❌ |
+| **MCP server (Claude Desktop)** | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -75,6 +78,12 @@ Files marked 🔥 were modified in recent commits. **The most relevant context s
 
 ```bash
 pip install gitbrief
+```
+
+For MCP server support (Claude Desktop integration):
+
+```bash
+pip install "gitbrief[mcp]"
 ```
 
 Requires Python 3.10+ and optionally a git repository.
@@ -122,6 +131,52 @@ gitbrief . --max-commits 200        # analyze more git history
 
 ---
 
+## Claude Desktop Integration (MCP)
+
+`gitbrief` v0.5.0 ships as an **MCP server**, letting you use it directly inside Claude Desktop — no terminal switching needed.
+
+### Setup
+
+**1. Install with MCP support:**
+
+```bash
+pip install "gitbrief[mcp]"
+```
+
+**2. Add to Claude Desktop config:**
+
+Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
+
+```json
+{
+  "mcpServers": {
+    "gitbrief": {
+      "command": "gitbrief-mcp"
+    }
+  }
+}
+```
+
+**3. Restart Claude Desktop** — you'll see gitbrief tools in the toolbar.
+
+### MCP tools exposed
+
+| Tool | Description |
+|------|-------------|
+| `pack_context` | Pack repo into LLM-ready context (the main gitbrief command) |
+| `get_repo_summary` | Get recent commits, hotspot files, and contributors |
+| `list_repo_files` | List files ranked by git-history priority |
+
+### Example prompts in Claude Desktop
+
+Once configured, you can say things like:
+
+- *"Pack my repo at ~/projects/myapp with an 8k token budget"*
+- *"Show me what files changed most in ~/projects/api recently"*
+- *"Pack only the changed files in my current branch for PR review"*
+
+---
+
 ## How ranking works
 
 `gitbrief` assigns each file a **priority score (0–1)**:
@@ -142,7 +197,7 @@ git clone https://github.com/faw21/gitbrief
 cd gitbrief
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pytest tests/   # 38 tests, 93% coverage
+pytest tests/   # 84 tests, 90% coverage
 ```
 
 ---
