@@ -236,6 +236,8 @@ chronicle file src/payments.py --style detective          # 8. understand comple
 
 - [critiq-action](https://github.com/faw21/critiq-action) — critiq as a GitHub Action for CI
 
+- [mergefix](https://github.com/faw21/mergefix) — AI-powered git merge conflict resolver
+
 ## License
 
 MIT
